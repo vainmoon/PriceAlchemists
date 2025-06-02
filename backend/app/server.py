@@ -3,14 +3,14 @@ from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
-from backend.app.utils.images import image_to_img_src, open_image
+from app.utils.images import image_to_img_src, open_image
 
 app = FastAPI(
     title='ML Inference API',
     description='Сервис для предсказания цены товара по изображению',
     version='1.0.0'
 )
-templates = Jinja2Templates(directory='backend/app/templates')
+templates = Jinja2Templates(directory='app/templates')
 
 @app.get('/', response_class=HTMLResponse)
 async def form_page(request: Request):
