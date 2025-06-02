@@ -11,6 +11,6 @@ RUN pip install --no-cache-dir --upgrade -r /backend/requirements.txt
 
 COPY ./app /backend/app
 
-EXPOSE 8000
+EXPOSE 8050
 
-CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8050"]
