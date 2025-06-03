@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
 
 from app.utils.images import image_to_img_src, open_image
 
@@ -11,6 +13,7 @@ app = FastAPI(
     version='1.0.0'
 )
 templates = Jinja2Templates(directory='app/templates')
+app.mount("/static", StaticFiles(directory="app/static"))
 
 @app.get('/', response_class=HTMLResponse)
 async def form_page(request: Request):
