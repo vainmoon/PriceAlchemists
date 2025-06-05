@@ -13,11 +13,11 @@ device = "mps" if torch.backends.mps.is_available() \
     else "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
-faiss_indexes = load("Models/faiss_indexes.joblib")
-subcat_id_to_y = load("Models/faiss_prices.joblib")
-subcat_centroids = load("Models/faiss_centroids.joblib")
+faiss_indexes = load("weights/faiss_indexes.joblib")
+subcat_id_to_y = load("weights/faiss_prices.joblib")
+subcat_centroids = load("weights/faiss_centroids.joblib")
 
-df = pd.read_csv("Data/aaa_advml_final_project.csv")
+df = pd.read_csv("data/aaa_advml_final_project.csv")
 
 image_subcat_dict = df.set_index("image_id")["subcategory_name"].to_dict()
 image_id_to_item_id = df.set_index("image_id")["item_id"].to_dict()

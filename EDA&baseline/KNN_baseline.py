@@ -11,8 +11,8 @@ device = "mps" if torch.backends.mps.is_available() \
     else "cuda" if torch.cuda.is_available() else "cpu"
 model, preprocess = clip.load("ViT-B/32", device=device)
 
-knn_model = load("Models/knn_model.joblib")
-df = pd.read_csv("Data/aaa_advml_final_project.csv")
+knn_model = load("weights/knn_model.joblib")
+df = pd.read_csv("data/aaa_advml_final_project.csv")
 
 
 def get_embedding_from_image_bytes_knn(image_bytes: bytes) -> np.ndarray:
