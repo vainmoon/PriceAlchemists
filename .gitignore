@@ -1,4 +1,4 @@
 .DS_Store
 data/
 .venv/
-backend/weights
+backend/weights/
