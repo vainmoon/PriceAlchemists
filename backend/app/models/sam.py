@@ -3,6 +3,7 @@ import numpy as np
 from segment_anything import sam_model_registry, SamPredictor
 import io
 from PIL import Image
+import cv2
 
 # Пути и тип модели подставьте свои
 _checkpoint_path = "weights/sam_vit_b_01ec64.pth"
@@ -11,7 +12,7 @@ _model_type = "vit_b"
 _sam = sam_model_registry[_model_type](checkpoint=_checkpoint_path)
 _predictor = SamPredictor(_sam)
 
-def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> np.ndarray:
+def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> bytes:
     """
     prompts: список словарей, где каждый элемент вида:
         {
@@ -95,9 +96,14 @@ def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> np.nd
         raise ValueError("Нет валидных подсказок (ни точки, ни прямоугольника).")
 
     # Сам по SAM мы получаем булевую маску: masks[0] = 2D-логический массив (True внутри сегмента)
-    mask = masks[0]
+    mask = ~masks[0]
 
-    # По аналогии с вашим старым кодом: затираем пиксели внутри маски нулями
-    segmented = image.copy()
-    segmented[mask] = 0
-    return segmented
+    # Convert the binary mask to a 3-channel image
+    mask_image = np.stack([mask.astype(np.uint8) * 255] * 3, axis=-1)
+    
+    # Encode as JPEG
+    is_success, encoded_jpg = cv2.imencode(".jpg", mask_image)
+    if not is_success:
+        raise ValueError("Failed to encode mask as JPEG")
+        
+    return encoded_jpg.tobytes()  # Return bytes that can be directly sent as image/jpeg

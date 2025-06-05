@@ -9,10 +9,13 @@ from fastapi.exceptions import HTTPException
 import numpy as np
 import cv2
 import json
+import torch
 
 
-from app.utils.images import image_to_img_src, open_image
+from app.utils.images import open_image, open_mask, apply_mask
 from app.models.sam import segment_image_from_prompts
+from app.models.price_predictor import load_models, full_inference_pipeline
+
 
 app = FastAPI(
     title='ML Inference API',
@@ -22,17 +25,37 @@ app = FastAPI(
 templates = Jinja2Templates(directory='app/templates')
 app.mount("/static", StaticFiles(directory="app/static"))
 
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+models = load_models(device=device, verbose=True)
+
+
 @app.get('/', response_class=HTMLResponse)
 async def form_page(request: Request):
     return templates.TemplateResponse(request=request, name='index.html')
 
 @app.post('/predict')
-async def predict(file:UploadFile):
-    ctx = {}
+async def predict(file:UploadFile, mask: UploadFile):
     image = open_image(file.file)
-    ctx['image'] = image_to_img_src(image)
-    ctx['price'] = 123.45
-    return JSONResponse(content={"price": 123})
+    mask_image = open_mask(mask.file)
+
+    if mask_image.size != image.size:
+        print("Размер маски и изображения не совпадают — используется оригинальное изображение.")
+        input_image = image
+    else:
+        masked_image = apply_mask(image, mask_image)
+        masked_image.save("log_img/masked_image.png")
+        input_image = masked_image
+
+    image.save("log_img/image.png")
+    mask_image.save("log_img/mask_image.png")
+
+    prediction = full_inference_pipeline(input_image, device=device, models=models)
+
+    print(prediction)
+
+    return JSONResponse(content={"price": prediction['price']})
+
 
 @app.post("/segment")
 async def segment(
@@ -67,17 +90,11 @@ async def segment(
 
         # 3) Вызвать SAM-модель
         segmented_np = segment_image_from_prompts(image_bytes, prompts_list)
-        # segmented_np — numpy array shape (H, W, 3), dtype uint8
+        # segmented_np теперь возвращает байты JPEG
 
-        # 4) Закодировать результат в JPEG
-        #    OpenCV ожидает BGR-формат, а у нас RGB, поэтому делаем [ : , : , ::-1 ]
-        is_success, encoded_jpg = cv2.imencode(".jpg", segmented_np[:, :, ::-1])
-        if not is_success:
-            raise HTTPException(status_code=500, detail="Не удалось закодировать изображение в JPEG.")
-
-        # 5) Вернуть байты JPEG клиенту
+        # 4) Вернуть байты JPEG клиенту
         return Response(
-            content=encoded_jpg.tobytes(),
+            content=segmented_np,  # Уже закодировано как JPEG
             media_type="image/jpeg",
             headers={
                 "Content-Type": "image/jpeg",

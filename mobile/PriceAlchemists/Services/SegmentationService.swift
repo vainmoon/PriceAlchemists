@@ -170,20 +170,38 @@ class SegmentationService {
         body.append(imageData)
         body.append("\r\n".data(using: .utf8)!)
         
-        // Add mask data
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"mask\"; filename=\"mask.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(maskData)
+        body.append("Content-Type: image/png\r\n\r\n".data(using: .utf8)!)
+        body.append(maskData)  // maskData должно быть PNG
         body.append("\r\n".data(using: .utf8)!)
         
         // Add final boundary
         body.append("--\(boundary)--\r\n".data(using: .utf8)!)
         
         request.httpBody = body
+
+        print("Sending prediction request to:", request.url?.absoluteString ?? "unknown URL")
+        print("Image data size:", imageData.count)
+        print("Mask data size:", maskData.count)
         
-        let (data, _) = try await session.data(for: request)
-        let response = try JSONDecoder().decode(PredictionResponse.self, from: data)
-        return response.price
+        let (data, response) = try await session.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw SegmentationError.invalidResponse("Invalid HTTP response")
+        }
+        
+        print("Prediction Response Headers:", httpResponse.allHeaderFields)
+        print("Prediction Response Status Code:", httpResponse.statusCode)
+        print("Prediction Response Size:", data.count)
+        
+        // Print raw response data as string if it's small enough
+        if data.count < 1000, let responseString = String(data: data, encoding: .utf8) {
+            print("Prediction Response Content:", responseString)
+        }
+        
+        let predictionResponse = try JSONDecoder().decode(PredictionResponse.self, from: data)
+        print("Predicted price:", predictionResponse.price)
+        return predictionResponse.price
     }
 } 
