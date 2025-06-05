@@ -44,11 +44,8 @@ async def predict(file:UploadFile, mask: UploadFile):
         input_image = image
     else:
         masked_image = apply_mask(image, mask_image)
-        masked_image.save("log_img/masked_image.png")
         input_image = masked_image
 
-    image.save("log_img/image.png")
-    mask_image.save("log_img/mask_image.png")
 
     prediction = full_inference_pipeline(input_image, device=device, models=models)
 
