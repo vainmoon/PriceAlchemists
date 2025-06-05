@@ -3,3 +3,7 @@ Pillow==11.2.1
 uvicorn==0.34.3
 Jinja2==3.1.6
 python-multipart==0.0.20
+torch>=2.0.0
+opencv-python
+git+https://github.com/facebookresearch/segment-anything.git
+torchvision>=0.15.2
