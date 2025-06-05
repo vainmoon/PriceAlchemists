@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi import Response
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import HTTPException
 
 import numpy as np
 import cv2
@@ -11,7 +12,7 @@ import json
 
 
 from app.utils.images import image_to_img_src, open_image
-from app.models.sam import segment_image_from_clicks
+from app.models.sam import segment_image_from_prompts
 
 app = FastAPI(
     title='ML Inference API',
@@ -25,47 +26,70 @@ app.mount("/static", StaticFiles(directory="app/static"))
 async def form_page(request: Request):
     return templates.TemplateResponse(request=request, name='index.html')
 
-@app.post('/predict', response_class=HTMLResponse)
-async def predict(file:UploadFile, request: Request):
+@app.post('/predict')
+async def predict(file:UploadFile):
     ctx = {}
     image = open_image(file.file)
     ctx['image'] = image_to_img_src(image)
     ctx['price'] = 123.45
-    return templates.TemplateResponse(request=request, name='index.html', context=ctx)
+    return JSONResponse(content={"price": 123})
 
 @app.post("/segment")
-async def segment(image: UploadFile = File(...), clicks: str = Form(...)):
+async def segment(
+    file: UploadFile = File(...),          # ожидаем multipart/form-data: поле "file"
+    prompts: str = Form(...)                # и поле "prompts" как JSON-строка
+):
+    """
+    Ожидает multipart/form-data с:
+      - file: UploadFile (изображение)
+      - prompts: str (JSON-массив подсказок, например:
+            [
+              {"type":"point","points":[{"x":100,"y":200}]},
+              {"type":"rectangle","points":[{"x":50,"y":50},{"x":200,"y":200}]}
+            ]
+        )
+    """
+
     try:
-        clicks_data = json.loads(clicks)
-        clicks_list = [[int(click['x']), int(click['y'])] for click in clicks_data]
-        
+        # 1) Прочитать байты изображения
+        image_bytes = await file.read()
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Файл не был передан или он пустой.")
 
-        image_bytes = await image.read()
+        # 2) Распарсить JSON из поля "prompts"
+        try:
+            prompts_list = json.loads(prompts)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Поле 'prompts' должно быть валидной JSON-строкой.")
 
-        result_image = segment_image_from_clicks(image_bytes, clicks_list)
-        
-        if result_image is None:
-            raise ValueError("Segmentation failed to produce an output")
-            
-        
-        # Encode result
-        _, buffer = cv2.imencode('.jpg', result_image)
+        if not isinstance(prompts_list, list):
+            raise HTTPException(status_code=400, detail="Поле 'prompts' должно быть списком подсказок.")
 
-            
-        # Return image response
+        # 3) Вызвать SAM-модель
+        segmented_np = segment_image_from_prompts(image_bytes, prompts_list)
+        # segmented_np — numpy array shape (H, W, 3), dtype uint8
+
+        # 4) Закодировать результат в JPEG
+        #    OpenCV ожидает BGR-формат, а у нас RGB, поэтому делаем [ : , : , ::-1 ]
+        is_success, encoded_jpg = cv2.imencode(".jpg", segmented_np[:, :, ::-1])
+        if not is_success:
+            raise HTTPException(status_code=500, detail="Не удалось закодировать изображение в JPEG.")
+
+        # 5) Вернуть байты JPEG клиенту
         return Response(
-            content=buffer.tobytes(),
+            content=encoded_jpg.tobytes(),
             media_type="image/jpeg",
             headers={
                 "Content-Type": "image/jpeg",
                 "Content-Disposition": "inline"
             }
         )
-    
+
+    except HTTPException as he:
+        # Если мы сами бросили HTTPException, отдадим его как есть
+        raise he
     except Exception as e:
-        print(f"Error during segmentation: {str(e)}")  # Log the error
-        import traceback
-        traceback.print_exc()  # Print full error traceback
+        # Ловим всё остальное и возвращаем 400 + текст ошибки для дебага
         return JSONResponse(
             status_code=400,
             content={"error": str(e)}
