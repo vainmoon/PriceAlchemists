@@ -87,7 +87,7 @@ struct ContentView: View {
                             image: image,
                             navigationPath: $navigationPath,
                             shouldResetToRoot: $shouldResetToRoot,
-                            baseURL: "http://62.84.127.68:8050"
+                            baseURL: "http://127.0.0.1:8000"
                         )
                         .navigationBarTitleDisplayMode(.inline)
                     }

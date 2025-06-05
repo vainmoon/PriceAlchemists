@@ -20,27 +20,6 @@ class ImageSegmentationViewModel: ObservableObject {
         self.segmentationService = SegmentationService(baseURL: baseURL)
     }
     
-    private func normalizeImage(_ image: UIImage) -> UIImage {
-        // Ensure correct orientation
-        let normalizedImage = image.normalizedImage()
-        
-        // Scale down very large images to prevent memory issues
-        let maxDimension: CGFloat = 2048 // Max dimension we'll allow
-        let size = normalizedImage.size
-        
-        if size.width > maxDimension || size.height > maxDimension {
-            let scale = maxDimension / max(size.width, size.height)
-            let newSize = CGSize(width: size.width * scale, height: size.height * scale)
-            
-            let renderer = UIGraphicsImageRenderer(size: newSize)
-            return renderer.image { context in
-                normalizedImage.draw(in: CGRect(origin: .zero, size: newSize))
-            }
-        }
-        
-        return normalizedImage
-    }
-    
     func processImageTap(at point: CGPoint) {
         switch selectedTool {
         case .point:
@@ -100,19 +79,17 @@ class ImageSegmentationViewModel: ObservableObject {
     private func requestSegmentation() async {
         guard let image = selectedImage else { return }
         
-        // Normalize the image before sending
-        let normalizedImage = normalizeImage(image)
-        
         isProcessing = true
         error = nil
         
         do {
             let mask = try await segmentationService.requestSegmentation(
-                image: normalizedImage,
+                image: image,
                 clicks: clicks
             )
             
-            if let darkened = applyMask(mask, to: normalizedImage) {
+            // Apply the mask to darken the original image
+            if let darkened = applyMask(mask, to: image) {
                 segmentationMask = darkened
             }
         } catch {
@@ -123,15 +100,12 @@ class ImageSegmentationViewModel: ObservableObject {
     }
     
     private func applyMask(_ mask: UIImage, to originalImage: UIImage) -> UIImage? {
-        // Normalize the mask to match original image orientation and size
-        let normalizedMask = normalizeImage(mask)
-        
-        guard let maskCG = normalizedMask.cgImage,
+        guard let maskCG = mask.cgImage,
               let originalCG = originalImage.cgImage,
               let colorSpace = originalCG.colorSpace else { return nil }
 
         // Store the raw mask for sending to server
-        self.rawSegmentationMask = normalizedMask
+        self.rawSegmentationMask = mask
 
         let width = originalCG.width
         let height = originalCG.height
@@ -151,10 +125,10 @@ class ImageSegmentationViewModel: ObservableObject {
 
         let rect = CGRect(x: 0, y: 0, width: width, height: height)
         
-        // Draw original image
+        // 1. Draw original image
         context.draw(originalCG, in: rect)
         
-        // Create darkening effect with inverted mask
+        // 2. Create darkening effect with inverted mask
         context.saveGState()
         context.clip(to: rect, mask: maskCG)
         context.setFillColor(UIColor(white: 0, alpha: 0.85).cgColor)
@@ -174,21 +148,5 @@ class ImageSegmentationViewModel: ObservableObject {
             image: image,
             mask: rawSegmentationMask  // Use the raw mask instead of the visual one
         )
-    }
-}
-
-// Extension to handle image orientation
-extension UIImage {
-    func normalizedImage() -> UIImage {
-        if imageOrientation == .up {
-            return self
-        }
-        
-        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-        draw(in: CGRect(origin: .zero, size: size))
-        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        return normalizedImage ?? self
     }
 } 

@@ -27,22 +27,8 @@ def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> bytes
     """
 
     # 1) Открываем изображение и конвертируем в numpy-array
-    image = Image.open(io.BytesIO(image_bytes))
-    
-    # Fix orientation based on EXIF
-    try:
-        if hasattr(image, '_getexif') and image._getexif() is not None:
-            from PIL import ImageOps
-            image = ImageOps.exif_transpose(image)
-    except Exception as e:
-        print(f"Warning: Could not process EXIF orientation: {e}")
-    
-    # Convert to RGB and numpy array
-    image = image.convert("RGB")
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image = np.array(image)
-
-    # Store original dimensions for later
-    original_height, original_width = image.shape[:2]
 
     # 2) Подготовим списки для SAM: возможны два типа подсказок
     point_list = []       # будем здесь накапливать все точки (если они есть)
@@ -55,21 +41,14 @@ def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> bytes
         if t == "point":
             # точки: item["points"] — список словарей { "x": ..., "y": ... }
             for p in pts:
-                # Scale points if image was resized
-                x = int(p["x"] * (original_width / image.shape[1]))
-                y = int(p["y"] * (original_height / image.shape[0]))
-                point_list.append([x, y])
+                # SAM ожидает формат [x, y] как вещественные (float или int) в одном массиве
+                point_list.append([p["x"], p["y"]])
         elif t == "rectangle":
             # rectangle: два угловых пункта
             if len(pts) < 2:
                 raise ValueError("Для прямоугольника нужно ровно 2 точки.")
-            
-            # Scale points if image was resized
-            x0 = int(pts[0]["x"] * (original_width / image.shape[1]))
-            y0 = int(pts[0]["y"] * (original_height / image.shape[0]))
-            x1 = int(pts[1]["x"] * (original_width / image.shape[1]))
-            y1 = int(pts[1]["y"] * (original_height / image.shape[0]))
-            
+            x0, y0 = pts[0]["x"], pts[0]["y"]
+            x1, y1 = pts[1]["x"], pts[1]["y"]
             # гарантируем, что x0 < x1 и y0 < y1 (на всякий случай)
             x_min, x_max = min(x0, x1), max(x0, x1)
             y_min, y_max = min(y0, y1), max(y0, y1)
@@ -93,18 +72,21 @@ def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> bytes
 
     # 5) Вызываем predict у SamPredictor
     if use_box and (input_points is not None):
+        # если и box, и точки одновременно — SAM умеет принимать оба (точки+прямоугольник)
         masks, scores, logits = _predictor.predict(
             point_coords=input_points,
             point_labels=input_labels,
-            box=box_arr.reshape(1, 4),
+            box=box_arr.reshape(1, 4),  # SAM ожидает shape (1, 4)
             multimask_output=False
         )
     elif use_box:
+        # только прямоугольник
         masks, scores, logits = _predictor.predict(
             box=box_arr.reshape(1, 4),
             multimask_output=False
         )
     elif input_points is not None:
+        # только точки
         masks, scores, logits = _predictor.predict(
             point_coords=input_points,
             point_labels=input_labels,
@@ -113,12 +95,10 @@ def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> bytes
     else:
         raise ValueError("Нет валидных подсказок (ни точки, ни прямоугольника).")
 
-    # Get the mask and ensure it matches original image dimensions
+    # Сам по SAM мы получаем булевую маску: masks[0] = 2D-логический массив (True внутри сегмента)
     mask = ~masks[0]
-    if mask.shape[:2] != (original_height, original_width):
-        mask = cv2.resize(mask.astype(np.uint8), (original_width, original_height), interpolation=cv2.INTER_NEAREST)
 
-    # Convert to 3-channel image
+    # Convert the binary mask to a 3-channel image
     mask_image = np.stack([mask.astype(np.uint8) * 255] * 3, axis=-1)
     
     # Encode as JPEG
@@ -126,4 +106,4 @@ def segment_image_from_prompts(image_bytes: bytes, prompts: list[dict]) -> bytes
     if not is_success:
         raise ValueError("Failed to encode mask as JPEG")
         
-    return encoded_jpg.tobytes()
+    return encoded_jpg.tobytes()  # Return bytes that can be directly sent as image/jpeg
