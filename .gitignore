@@ -1,5 +1,4 @@
 .DS_Store
 data/
-mobile/
 .venv/
 backend/weights
