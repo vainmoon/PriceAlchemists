@@ -23,7 +23,7 @@ image_subcat_dict = df.set_index("image_id")["subcategory_name"].to_dict()
 image_id_to_item_id = df.set_index("image_id")["item_id"].to_dict()
 
 
-def get_embedding_from_image_bytes(image_bytes: bytes) -> np.ndarray:
+def get_embedding_from_image_bytes_faiss(image_bytes: bytes) -> np.ndarray:
     image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image_tensor = preprocess(image).unsqueeze(0).to(device)
     with torch.no_grad():
@@ -32,7 +32,7 @@ def get_embedding_from_image_bytes(image_bytes: bytes) -> np.ndarray:
 
 
 def predict_price_faiss(image_bytes: bytes) -> float:
-    emb = get_embedding_from_image_bytes(image_bytes).reshape(1, -1)
+    emb = get_embedding_from_image_bytes_faiss(image_bytes).reshape(1, -1)
 
     centroid_matrix = np.stack(list(subcat_centroids.values()))
     centroid_keys = list(subcat_centroids.keys())
@@ -49,7 +49,7 @@ def predict_price_faiss(image_bytes: bytes) -> float:
 
 
 def get_top3_similar_item_ids_faiss(image_bytes: bytes) -> list[int]:
-    emb = get_embedding_from_image_bytes(image_bytes).reshape(1, -1)
+    emb = get_embedding_from_image_bytes_faiss(image_bytes).reshape(1, -1)
 
     centroid_matrix = np.stack(list(subcat_centroids.values()))
     centroid_keys = list(subcat_centroids.keys())
