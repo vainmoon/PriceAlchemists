@@ -10,13 +10,12 @@ import numpy as np
 import cv2
 import json
 import torch
-
+import base64
 
 from app.utils.images import open_image, open_mask, apply_mask
 from app.models.sam import segment_image_from_prompts
 from app.models.price_predictor import load_models, full_inference_pipeline
-from app.models.knn import get_top3_similar_item_ids_knn
-from app.models.faiss import get_top3_similar_item_ids_faiss
+from app.models.simple_faiss import get_top3_similar_item_ids_faiss
 
 app = FastAPI(
     title='ML Inference API',
@@ -52,11 +51,24 @@ async def predict(file:UploadFile, mask: UploadFile):
 
     print(prediction)
 
-    similar_item = get_top3_similar_item_ids_faiss(image)
+    # Получаем top-3 похожих товаров
+    similar_items = get_top3_similar_item_ids_faiss(input_image)
+    print(f"Top-3 похожих товаров: {similar_items}")
 
-    print(similar_item)
+    # Заглушка для отправления изображений рекомендаций
+    with open(f"data/images/{similar_items[0]}.jpg", "rb") as f:
+        img_data_1 = base64.b64encode(f.read()).decode("utf-8")
 
-    return JSONResponse(content={"price": prediction['price']})
+    with open(f"data/images/{similar_items[1]}.jpg", "rb") as f:
+        img_data_2 = base64.b64encode(f.read()).decode("utf-8")
+
+    with open(f"data/images/{similar_items[2]}.jpg", "rb") as f:
+        img_data_3 = base64.b64encode(f.read()).decode("utf-8")
+
+    return JSONResponse(content={
+        "price": prediction['price'],
+        "similarProducts": [img_data_1, img_data_2, img_data_3]
+    })
 
 
 @app.post("/segment")

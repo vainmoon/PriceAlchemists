@@ -3,6 +3,7 @@ import UIKit
 
 struct PredictionResponse: Codable {
     let price: Double
+    let similarProducts: [String]  // Base64 encoded image strings
 }
 
 enum SegmentationError: Error {
@@ -18,17 +19,17 @@ extension SegmentationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidImage:
-            return "Could not process the input image"
+            return "Не удалось обработать изображение"
         case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
+            return "Ошибка сети: \(error.localizedDescription)"
         case .invalidResponse(let message):
-            return "Invalid response: \(message)"
+            return "Некорректный ответ: \(message)"
         case .decodingError:
-            return "Could not decode the response"
+            return "Не удалось декодировать ответ"
         case .encodingError:
-            return "Could not encode the request"
+            return "Не удалось закодировать запрос"
         case .serverError(let message):
-            return "Server error: \(message)"
+            return "Ошибка сервера: \(message)"
         }
     }
 }
@@ -133,7 +134,7 @@ class SegmentationService {
         }
     }
     
-    func requestPrediction(image: UIImage, mask: UIImage?) async throws -> Double {
+    func requestPrediction(image: UIImage, mask: UIImage?) async throws -> (Double, [UIImage]) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             throw SegmentationError.invalidImage
         }
@@ -154,7 +155,7 @@ class SegmentationService {
         return try await sendPredictionRequest(imageData: imageData, maskData: maskData)
     }
     
-    private func sendPredictionRequest(imageData: Data, maskData: Data) async throws -> Double {
+    private func sendPredictionRequest(imageData: Data, maskData: Data) async throws -> (Double, [UIImage]) {
         var request = URLRequest(url: baseURL.appendingPathComponent("predict"))
         request.httpMethod = "POST"
         
@@ -173,7 +174,7 @@ class SegmentationService {
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"mask\"; filename=\"mask.jpg\"\r\n".data(using: .utf8)!)
         body.append("Content-Type: image/png\r\n\r\n".data(using: .utf8)!)
-        body.append(maskData)  // maskData должно быть PNG
+        body.append(maskData)
         body.append("\r\n".data(using: .utf8)!)
         
         // Add final boundary
@@ -202,6 +203,16 @@ class SegmentationService {
         
         let predictionResponse = try JSONDecoder().decode(PredictionResponse.self, from: data)
         print("Predicted price:", predictionResponse.price)
-        return predictionResponse.price
+        
+        // Convert base64 strings to UIImages
+        let similarProducts = try predictionResponse.similarProducts.map { base64String in
+            guard let imageData = Data(base64Encoded: base64String),
+                  let image = UIImage(data: imageData) else {
+                throw SegmentationError.invalidResponse("Could not decode similar product image")
+            }
+            return image
+        }
+        
+        return (predictionResponse.price, similarProducts)
     }
 } 

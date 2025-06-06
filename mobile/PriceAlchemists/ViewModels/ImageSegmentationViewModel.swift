@@ -131,7 +131,7 @@ class ImageSegmentationViewModel: ObservableObject {
         // 2. Create darkening effect with inverted mask
         context.saveGState()
         context.clip(to: rect, mask: maskCG)
-        context.setFillColor(UIColor(white: 0, alpha: 0.85).cgColor)
+        context.setFillColor(UIColor(white: 0, alpha: 0.80).cgColor)
         context.fill(rect)
         context.restoreGState()
 
@@ -139,7 +139,7 @@ class ImageSegmentationViewModel: ObservableObject {
         return UIImage(cgImage: resultCG)
     }
     
-    func requestPrediction() async throws -> Double {
+    func requestPrediction() async throws -> (Double, [UIImage]) {
         guard let image = selectedImage else {
             throw SegmentationError.invalidImage
         }

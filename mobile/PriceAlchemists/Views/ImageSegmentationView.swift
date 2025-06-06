@@ -8,6 +8,7 @@ struct ImageSegmentationView: View {
     @StateObject private var viewModel: ImageSegmentationViewModel
     @State private var showingPredictionResult = false
     @State private var predictedPrice: Double?
+    @State private var similarProducts: [UIImage] = []
     @State private var isPredicting = false
     @Binding var navigationPath: NavigationPath
     @Binding var shouldResetToRoot: Bool
@@ -139,7 +140,7 @@ struct ImageSegmentationView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .scaleEffect(2.0)
-                            Text("Calculating price...")
+                            Text("Расчет стоимости...")
                                 .foregroundColor(.white)
                                 .padding(.top)
                         }
@@ -149,7 +150,7 @@ struct ImageSegmentationView: View {
                 // Error overlay
                 if let error = viewModel.error {
                     VStack {
-                        Text("Error")
+                        Text("Ошибка")
                             .font(.headline)
                             .foregroundColor(.white)
                         Text(error)
@@ -205,6 +206,7 @@ struct ImageSegmentationView: View {
             if let price = predictedPrice {
                 PredictionResultView(
                     price: price,
+                    similarProducts: similarProducts,
                     navigationPath: $navigationPath,
                     shouldResetToRoot: $shouldResetToRoot
                 )
@@ -271,7 +273,9 @@ struct ImageSegmentationView: View {
         defer { isPredicting = false }
         
         do {
-            predictedPrice = try await viewModel.requestPrediction()
+            let (price, products) = try await viewModel.requestPrediction()
+            predictedPrice = price
+            similarProducts = products
             showingPredictionResult = true
         } catch {
             // Handle error if needed
