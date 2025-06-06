@@ -15,7 +15,8 @@ import torch
 from app.utils.images import open_image, open_mask, apply_mask
 from app.models.sam import segment_image_from_prompts
 from app.models.price_predictor import load_models, full_inference_pipeline
-
+from app.models.knn import get_top3_similar_item_ids_knn
+from app.models.faiss import get_top3_similar_item_ids_faiss
 
 app = FastAPI(
     title='ML Inference API',
@@ -50,6 +51,10 @@ async def predict(file:UploadFile, mask: UploadFile):
     prediction = full_inference_pipeline(input_image, device=device, models=models)
 
     print(prediction)
+
+    similar_item = get_top3_similar_item_ids_faiss(image)
+
+    print(similar_item)
 
     return JSONResponse(content={"price": prediction['price']})
 
