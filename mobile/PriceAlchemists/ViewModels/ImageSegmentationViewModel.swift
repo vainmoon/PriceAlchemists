@@ -4,7 +4,8 @@ import Combine
 @MainActor
 class ImageSegmentationViewModel: ObservableObject {
     @Published var selectedImage: UIImage?
-    @Published var segmentationMask: UIImage?
+    @Published var segmentationMask: UIImage?  // Visual representation
+    @Published var rawSegmentationMask: UIImage?  // Raw mask for sending to server
     @Published var clicks: [SegmentationClick] = []
     @Published var isProcessing = false
     @Published var error: String?
@@ -68,6 +69,7 @@ class ImageSegmentationViewModel: ObservableObject {
     func resetSegmentation() {
         clicks.removeAll()
         segmentationMask = nil
+        rawSegmentationMask = nil
         error = nil
         isDragging = false
         dragStartPoint = nil
@@ -102,6 +104,9 @@ class ImageSegmentationViewModel: ObservableObject {
               let originalCG = originalImage.cgImage,
               let colorSpace = originalCG.colorSpace else { return nil }
 
+        // Store the raw mask for sending to server
+        self.rawSegmentationMask = mask
+
         let width = originalCG.width
         let height = originalCG.height
         let bitsPerComponent = originalCG.bitsPerComponent
@@ -120,32 +125,28 @@ class ImageSegmentationViewModel: ObservableObject {
 
         let rect = CGRect(x: 0, y: 0, width: width, height: height)
         
-        
-        // 1. Рисуем оригинальное изображение
+        // 1. Draw original image
         context.draw(originalCG, in: rect)
         
-        // 2. Создаём прозрачную чёрную маску
+        // 2. Create darkening effect with inverted mask
         context.saveGState()
-        context.clip(to: rect, mask: maskCG)  // используем maskCG как альфа-маску
-
-        // Цвет — полупрозрачный чёрный (например, alpha = 0.2)
-        context.setFillColor(UIColor(white: 0, alpha: 0.85).cgColor)
+        context.clip(to: rect, mask: maskCG)
+        context.setFillColor(UIColor(white: 0, alpha: 0.80).cgColor)
         context.fill(rect)
         context.restoreGState()
 
-        // 3. Извлекаем финальное изображение
         guard let resultCG = context.makeImage() else { return nil }
         return UIImage(cgImage: resultCG)
     }
     
-    func requestPrediction() async throws -> Double {
+    func requestPrediction() async throws -> (Double, [UIImage]) {
         guard let image = selectedImage else {
             throw SegmentationError.invalidImage
         }
         
         return try await segmentationService.requestPrediction(
             image: image,
-            mask: segmentationMask
+            mask: rawSegmentationMask  // Use the raw mask instead of the visual one
         )
     }
 } 

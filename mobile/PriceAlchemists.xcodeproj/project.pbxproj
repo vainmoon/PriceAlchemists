@@ -10,9 +10,22 @@
 		B31F7E132DEFAAFB00B38B9F /* PriceAlchemists.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PriceAlchemists.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B3F7E57A2DF240E60037B3C3 /* Exceptions for "PriceAlchemists" folder in "PriceAlchemists" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B31F7E122DEFAAFB00B38B9F /* PriceAlchemists */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B31F7E152DEFAAFB00B38B9F /* PriceAlchemists */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B3F7E57A2DF240E60037B3C3 /* Exceptions for "PriceAlchemists" folder in "PriceAlchemists" target */,
+			);
 			path = PriceAlchemists;
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,7 @@
 				DEVELOPMENT_TEAM = YTUG336FPJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PriceAlchemists/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = NO;
@@ -289,6 +303,7 @@
 				DEVELOPMENT_TEAM = YTUG336FPJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PriceAlchemists/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UIApplicationSupportsMultipleScenes = NO;

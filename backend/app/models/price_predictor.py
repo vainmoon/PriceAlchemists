@@ -9,6 +9,7 @@ from transformers import DistilBertModel, DistilBertTokenizer, BlipProcessor, Bl
 import torchvision.transforms as transforms
 
 
+
 class PricePredictor(nn.Module):
     def __init__(self, image_embedding_dim=512, text_embedding_dim=512, hidden_dim=256,
                  num_categories=2, num_subcategories=14):
@@ -111,7 +112,7 @@ def load_models(device="cuda", verbose=False):
 
     # Загрузка модели классификации категории
     category_model = CategorySubcategoryClassifier(num_categories, num_subcategories).to(device)
-    category_model.load_state_dict(torch.load("best_cat_model.pth", map_location=device, weights_only=True))
+    category_model.load_state_dict(torch.load("weights/best_cat_model.pth", map_location=device, weights_only=True))
     category_model.eval()
 
     # Загрузка модели предсказания цены
@@ -119,7 +120,7 @@ def load_models(device="cuda", verbose=False):
         num_categories=num_categories,
         num_subcategories=num_subcategories
     ).to(device)
-    price_model.load_state_dict(torch.load("model_epoch_5.pth", map_location=device, weights_only=True))
+    price_model.load_state_dict(torch.load("weights/model_epoch_5.pth", map_location=device, weights_only=True))
     price_model.eval()
 
     if verbose:
@@ -137,7 +138,7 @@ def load_models(device="cuda", verbose=False):
     }
 
 
-def full_inference_pipeline(image_path, device="cuda", models=None):
+def full_inference_pipeline(image, device="cuda", models=None):
     """
     Полный пайплайн инференса:
         1. Определение категории и подкатегории
@@ -155,9 +156,6 @@ def full_inference_pipeline(image_path, device="cuda", models=None):
     price_model = models["price_model"]
     idx_to_category = models["category_map"]
     idx_to_subcategory = models["subcategory_map"]
-
-    # Загрузка и предобработка изображения
-    image = Image.open(image_path).convert("RGB")
 
     # Трансформация для классификатора
     image_tensor_val = transform(image).unsqueeze(0).to(device)
@@ -217,6 +215,7 @@ def full_inference_pipeline(image_path, device="cuda", models=None):
         "title": generated_title,
         "price": predicted_price
     }
+
 
 
 if __name__ == "__main__":

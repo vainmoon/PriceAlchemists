@@ -29,7 +29,7 @@ struct ContentView: View {
                     Button(action: {
                         navigationPath.append("segmentation")
                     }) {
-                        Text("Start Segmentation")
+                        Text("Начать сегментацию")
                             .font(.headline)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -41,9 +41,9 @@ struct ContentView: View {
                     .disabled(selectedImage == nil)
                 } else {
                     ContentUnavailableView(
-                        "No Image Selected",
+                        "Изображение не выбрано",
                         systemImage: "photo",
-                        description: Text("Tap the button below to select an image")
+                        description: Text("Нажмите кнопку ниже, чтобы выбрать изображение")
                     )
                 }
                 
@@ -51,7 +51,7 @@ struct ContentView: View {
                 
                 PhotosPicker(selection: $selectedItem,
                            matching: .images) {
-                    Text("Select Image")
+                    Text("Выбрать изображение")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -61,7 +61,7 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Image Segmentation")
+            .navigationTitle("Оценка стоимости")
             .onChange(of: selectedItem) { oldItem, newItem in
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),
