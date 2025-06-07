@@ -87,6 +87,20 @@ struct ContentView: View {
                 Spacer()
                 
                 VStack(spacing: 16) {
+                    if selectedImage != nil {
+                        Button(action: {
+                            navigationPath.append("segmentation")
+                        }) {
+                            Text("Узнать стоимость")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(10)
+                        }
+                    }
+                    
                     PhotosPicker(selection: $selectedItem,
                                matching: .images) {
                         Text("Выбрать изображение")
@@ -96,20 +110,6 @@ struct ContentView: View {
                             .padding()
                             .background(Color.green)
                             .cornerRadius(10)
-                    }
-                    
-                    if selectedImage != nil {
-                        Button(action: {
-                            navigationPath.append("segmentation")
-                        }) {
-                            Text("Начать сегментацию")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.blue)
-                                .cornerRadius(10)
-                        }
                     }
                 }
                 .padding(.horizontal)
@@ -148,7 +148,7 @@ struct ContentView: View {
                             image: image,
                             navigationPath: $navigationPath,
                             shouldResetToRoot: $shouldResetToRoot,
-                            baseURL: "http://127.0.0.1:8000"
+                            baseURL: "http://62.84.127.68:8050"
                         )
                         .navigationBarTitleDisplayMode(.inline)
                     }
