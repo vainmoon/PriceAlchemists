@@ -12,7 +12,7 @@ import json
 import torch
 import base64
 
-from app.utils.images import open_image, open_mask, apply_mask
+from app.utils.images import open_image, open_mask, apply_mask, crop_image_by_mask
 from app.models.sam import segment_image_from_prompts
 from app.models.price_predictor import load_models, full_inference_pipeline
 from app.models.simple_faiss import get_top3_similar_item_ids_faiss
@@ -44,8 +44,7 @@ async def predict(file:UploadFile, mask: UploadFile):
         input_image = image
     else:
         masked_image = apply_mask(image, mask_image)
-        input_image = masked_image
-
+        input_image = crop_image_by_mask(masked_image, mask_image)
 
     prediction = full_inference_pipeline(input_image, device=device, models=models)
 
@@ -125,3 +124,4 @@ async def segment(
             status_code=400,
             content={"error": str(e)}
         )
+    

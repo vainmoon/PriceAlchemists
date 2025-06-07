@@ -15,10 +15,24 @@ struct ImageSegmentationView: View {
     let image: UIImage
     
     init(image: UIImage, navigationPath: Binding<NavigationPath>, shouldResetToRoot: Binding<Bool>, baseURL: String = "YOUR_API_ENDPOINT") {
-        _viewModel = StateObject(wrappedValue: ImageSegmentationViewModel(baseURL: baseURL))
-        self.image = image
-        _navigationPath = navigationPath
-        _shouldResetToRoot = shouldResetToRoot
+        let normalizedImage = ImageSegmentationView.normalizeImageIfNeeded(image)
+        self.image = normalizedImage
+        self._navigationPath = navigationPath
+        self._shouldResetToRoot = shouldResetToRoot
+        self._viewModel = StateObject(wrappedValue: ImageSegmentationViewModel(baseURL: baseURL))
+    }
+    
+    private static func normalizeImageIfNeeded(_ image: UIImage) -> UIImage {
+        if image.imageOrientation == .up {
+            return image
+        }
+        
+        UIGraphicsBeginImageContextWithOptions(image.size, false, image.scale)
+        image.draw(in: CGRect(origin: .zero, size: image.size))
+        let normalizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return normalizedImage ?? image
     }
     
     var body: some View {

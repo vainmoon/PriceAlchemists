@@ -38,3 +38,23 @@ def apply_mask(image: Image.Image, mask: Image.Image) -> Image.Image:
     masked_image = image_np * mask_np[:, :, None]
 
     return Image.fromarray(masked_image.astype(np.uint8))
+
+
+def crop_image_by_mask(image, mask):
+    mask_np = np.array(mask)
+
+    non_zero = np.argwhere(mask_np)
+
+    if non_zero.size == 0:
+        raise ValueError("Маска не содержит ненулевых пикселей")
+
+    top_left = non_zero.min(axis=0)
+    bottom_right = non_zero.max(axis=0) + 1 
+
+    y1, x1 = top_left
+    y2, x2 = bottom_right
+
+    # Обрезаем изображение
+    cropped = image.crop((x1, y1, x2, y2))
+
+    return cropped
