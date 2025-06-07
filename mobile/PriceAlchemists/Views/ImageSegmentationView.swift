@@ -176,7 +176,7 @@ struct ImageSegmentationView: View {
                 Button(action: {
                     viewModel.selectedTool = viewModel.selectedTool == .point ? .rectangle : .point
                 }) {
-                    Image(systemName: viewModel.selectedTool == .point ? "dot.circle.fill" : "rectangle")
+                    Image(systemName: viewModel.selectedTool == .point ? "smallcircle.filled.circle" : "rectangle")
                         .imageScale(.large)
                         .foregroundColor(.blue)
                 }
@@ -188,7 +188,7 @@ struct ImageSegmentationView: View {
                         await predictPrice()
                     }
                 }) {
-                    Image(systemName: "dollarsign.circle.fill")
+                    Image(systemName: "rublesign.circle")
                         .imageScale(.large)
                         .foregroundColor(.blue)
                 }

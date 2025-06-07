@@ -17,49 +17,55 @@ struct ContentView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack {
+                Spacer()
+                
                 if let image = selectedImage {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFit()
-                        .frame(height: 300)
-                        .cornerRadius(12)
-                        .shadow(radius: 5)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: .infinity, maxHeight: UIScreen.main.bounds.height * 0.6)
+                        .cornerRadius(15)
+                        .shadow(radius: 8)
                         .padding()
-                    
-                    Button(action: {
-                        navigationPath.append("segmentation")
-                    }) {
-                        Text("Начать сегментацию")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(10)
-                    }
-                    .padding(.horizontal)
-                    .disabled(selectedImage == nil)
                 } else {
                     ContentUnavailableView(
                         "Изображение не выбрано",
                         systemImage: "photo",
                         description: Text("Нажмите кнопку ниже, чтобы выбрать изображение")
                     )
+                    .frame(maxHeight: UIScreen.main.bounds.height * 0.6)
                 }
                 
                 Spacer()
                 
-                PhotosPicker(selection: $selectedItem,
-                           matching: .images) {
-                    Text("Выбрать изображение")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.green)
-                        .cornerRadius(10)
+                VStack(spacing: 16) {
+                    PhotosPicker(selection: $selectedItem,
+                               matching: .images) {
+                        Text("Выбрать изображение")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .cornerRadius(10)
+                    }
+                    
+                    if selectedImage != nil {
+                        Button(action: {
+                            navigationPath.append("segmentation")
+                        }) {
+                            Text("Начать сегментацию")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(10)
+                        }
+                    }
                 }
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom)
             }
             .navigationTitle("Оценка стоимости")
             .onChange(of: selectedItem) { oldItem, newItem in
