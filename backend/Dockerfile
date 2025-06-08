@@ -1,6 +1,6 @@
 FROM python:3.9
 
-LABEL maintainer="saumnov.ext"
+LABEL project="price_alchemists"
 
 # Set working directory
 WORKDIR /backend
