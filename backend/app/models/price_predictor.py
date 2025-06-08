@@ -79,11 +79,11 @@ def load_models(device="cuda", verbose=False):
     ])
 
     # Модель BLIP для генерации названия товара
-    blip_processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base", use_fast=True)
-    blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to(device)
+    blip_processor = BlipProcessor.from_pretrained("weights/models--Salesforce--blip-image-captioning-base/snapshots/82a37760796d32b1411fe092ab5d4e227313294b", use_fast=True)
+    blip_model = BlipForConditionalGeneration.from_pretrained("weights/models--Salesforce--blip-image-captioning-base/snapshots/82a37760796d32b1411fe092ab5d4e227313294b").to(device)
 
     # Токенизатор текста
-    tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+    tokenizer = DistilBertTokenizer.from_pretrained('weights/models--distilbert-base-uncased/snapshots/12040accade4e8a0f71eabdb258fecc2e7e948be')
 
     dataset_category_to_idx = {
         "Электроника": 0,
