@@ -47,8 +47,9 @@ async def predict(file:UploadFile, mask: UploadFile):
         input_image = crop_image_by_mask(masked_image, mask_image)
 
     prediction = full_inference_pipeline(input_image, device=device, models=models)
-
     print(prediction)
+    # prediction = full_inference_pipeline(input_image, device=device, models=models, return_intermediates) -> (price, embedding)
+    # print(prediction[0])
 
     # Получаем top-3 похожих товаров
     similar_items = get_top3_similar_item_ids_faiss(input_image)
