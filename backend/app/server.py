@@ -1,3 +1,4 @@
+from typing import Dict, List, Optional, Any
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -5,6 +6,7 @@ from fastapi.responses import HTMLResponse
 from fastapi import Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import HTTPException
+from PIL import Image
 
 import json
 import torch
@@ -17,11 +19,11 @@ from app.models.faiss import find_top3_similar
 
 
 app = FastAPI(
-    title='PriceAlchemists',
-    description='Сервис для предсказания цены товара по изображению',
-    version='1.0.0'
+    title="PriceAlchemists",
+    description="Сервис для предсказания цены товара по изображению",
+    version="1.0.0"
 )
-templates = Jinja2Templates(directory='app/templates')
+templates = Jinja2Templates(directory="app/templates")
 app.mount("/static", StaticFiles(directory="app/static"))
 
 
@@ -30,49 +32,51 @@ price_predictor_model = load_models(device=device, verbose=True)
 
 def predict_price(image):
     prediction = full_inference_pipeline(image, device=device, models=price_predictor_model)
-    return prediction['price']
+    return prediction["price"]
 
-def get_similar_images(image):
+
+def get_similar_images(image: Image.Image) -> List[str]:
     similar_images_id = find_top3_similar(image)
     similar_images = []
     for image_id in similar_images_id:
-        with open(f'data/images/{image_id}.jpg', 'rb') as f:
-            img_data = base64.b64encode(f.read()).decode('utf-8')
+        with open(f"data/images/{image_id}.jpg", "rb") as f:
+            img_data = base64.b64encode(f.read()).decode("utf-8")
             similar_images.append(img_data)
     return similar_images
 
-@app.get('/', response_class=HTMLResponse)
-async def form_page(request: Request):
-    return templates.TemplateResponse(request=request, name='index.html')
+
+@app.get("/", response_class=HTMLResponse)
+async def form_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
-@app.get('/predict_for_web')
-async def predict_for_web_get():
-    return RedirectResponse(url='/', status_code=303)
+@app.get("/predict_for_web")
+async def predict_for_web_get() -> RedirectResponse:
+    return RedirectResponse(url="/", status_code=303)
 
 
-@app.post('/predict_for_web', response_class=HTMLResponse)
-async def predict_for_web(request: Request, file: UploadFile):
-    ctx = {}
+@app.post("/predict_for_web", response_class=HTMLResponse)
+async def predict_for_web(request: Request, file: UploadFile) -> HTMLResponse:
+    ctx: Dict[str, Any] = {}
     
     if not file or not file.filename:
-        ctx['error'] = 'Пожалуйста, выберите изображение перед отправкой'
-        return templates.TemplateResponse(request=request, name='index.html', context=ctx)
+        ctx["error"] = "Пожалуйста, выберите изображение перед отправкой"
+        return templates.TemplateResponse(request=request, name="index.html", context=ctx)
     
-    if not file.content_type.startswith('image/'):
-        ctx['error'] = 'Пожалуйста, загрузите файл изображения'
-        return templates.TemplateResponse(request=request, name='index.html', context=ctx)
+    if not file.content_type.startswith("image/"):
+        ctx["error"] = "Пожалуйста, загрузите файл изображения"
+        return templates.TemplateResponse(request=request, name="index.html", context=ctx)
     
     image = open_image(file.file)
 
-    ctx['price'] = predict_price(image)
-    ctx['similarProducts'] = get_similar_images(image)
+    ctx["price"] = predict_price(image)
+    ctx["similarProducts"] = get_similar_images(image)
 
-    return templates.TemplateResponse(request=request, name='index.html', context=ctx)
+    return templates.TemplateResponse(request=request, name="index.html", context=ctx)
 
 
-@app.post('/predict_for_mobile')
-async def predict_for_mobile(file:UploadFile, mask: UploadFile):
+@app.post("/predict_for_mobile")
+async def predict_for_mobile(file: UploadFile, mask: UploadFile) -> JSONResponse:
     image = open_image(file.file)
     mask_image = open_mask(mask.file)
 
