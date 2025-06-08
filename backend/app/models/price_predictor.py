@@ -199,7 +199,7 @@ def full_inference_pipeline(image, device="cuda", models=None, return_intermedia
 
     # Шаг 4: Предсказание цены
     with torch.no_grad():
-        price_log, embedding = price_model(
+        price_log = price_model(
             image_tensor_price,
             input_ids,
             attention_mask,
