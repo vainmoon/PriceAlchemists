@@ -36,7 +36,7 @@ class PricePredictor(nn.Module):
             nn.Linear(hidden_dim, 1)
         )
 
-    def forward(self, image, input_ids, attention_mask, category_ids, subcategory_ids):
+    def forward(self, image, input_ids, attention_mask, category_ids, subcategory_ids, return_intermediates=False):
         img_feat = self.image_encoder(image)
         img_emb = self.image_proj(img_feat)
 
@@ -49,7 +49,10 @@ class PricePredictor(nn.Module):
         fused = torch.cat([img_emb, text_emb, cat_emb, subcat_emb], dim=1)
         price = self.mlp(fused)
 
-        return price
+        if return_intermediates:
+            return price, img_emb  # <-- Возвращает цену и embedding
+        else:
+            return price
 
 
 class CategorySubcategoryClassifier(nn.Module):
@@ -138,7 +141,7 @@ def load_models(device="cuda", verbose=False):
     }
 
 
-def full_inference_pipeline(image, device="cuda", models=None):
+def full_inference_pipeline(image, device="cuda", models=None, return_intermediates=False):
     """
     Полный пайплайн инференса:
         1. Определение категории и подкатегории
@@ -204,7 +207,8 @@ def full_inference_pipeline(image, device="cuda", models=None):
             input_ids,
             attention_mask,
             cat_tensor,
-            subcat_tensor
+            subcat_tensor,
+            return_intermediates
         )
 
     predicted_price = np.expm1(price_log.cpu().item()) # возвращаем цену в исходном масштабе
