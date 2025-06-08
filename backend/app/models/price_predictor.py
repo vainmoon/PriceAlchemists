@@ -51,8 +51,7 @@ class PricePredictor(nn.Module):
 
         if return_intermediates:
             return price, img_feat  # <-- Возвращает цену и embedding
-        else:
-            return price
+        return price, None
 
 
 class CategorySubcategoryClassifier(nn.Module):
@@ -202,7 +201,7 @@ def full_inference_pipeline(image, device="cuda", models=None, return_intermedia
 
     # Шаг 4: Предсказание цены
     with torch.no_grad():
-        price_log = price_model(
+        price_log, embedding = price_model(
             image_tensor_price,
             input_ids,
             attention_mask,
@@ -217,7 +216,8 @@ def full_inference_pipeline(image, device="cuda", models=None, return_intermedia
         "category": predicted_category,
         "subcategory": predicted_subcategory,
         "title": generated_title,
-        "price": predicted_price
+        "price": predicted_price,
+        "embedding": embedding
     }
 
 
