@@ -156,7 +156,7 @@ class SegmentationService {
     }
     
     private func sendPredictionRequest(imageData: Data, maskData: Data) async throws -> (Double, [UIImage]) {
-        var request = URLRequest(url: baseURL.appendingPathComponent("predict"))
+        var request = URLRequest(url: baseURL.appendingPathComponent("predict_for_mobile"))
         request.httpMethod = "POST"
         
         let boundary = UUID().uuidString

@@ -10,7 +10,8 @@ _model_type = "vit_b"
 _sam = sam_model_registry[_model_type](checkpoint=_checkpoint_path)
 _predictor = SamPredictor(_sam)
 
-def segment_image_from_prompts(image, prompts: list[dict]) -> bytes:
+def segment_image_from_prompts(image_bytes, prompts: list[dict]) -> bytes:
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     image = np.array(image)
 
     point_list = []

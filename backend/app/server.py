@@ -86,17 +86,17 @@ async def predict_for_mobile(file:UploadFile, mask: UploadFile):
     similar_images = get_similar_images(input_image)
 
     return JSONResponse(content={
-        "price": prediction['price'],
+        "price": prediction,
         "similarProducts": similar_images
     })
 
 
 @app.post("/segment")
-async def segment(file: UploadFile, prompts: str):
-    image = open_image(file.file)
+async def segment(file: UploadFile = File(...), prompts: str = Form(...)):
+    image_bytes = await file.read()
     prompts_list = json.loads(prompts)
 
-    segmented_np = segment_image_from_prompts(image, prompts_list)
+    segmented_np = segment_image_from_prompts(image_bytes, prompts_list)
 
     return Response(
         content=segmented_np,
