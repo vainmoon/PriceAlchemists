@@ -1,5 +1,3 @@
-# build_index.py
-
 import os
 import numpy as np
 import torch
@@ -10,10 +8,9 @@ import pickle
 import pandas as pd
 from tqdm import tqdm
 
-# Константы
 IMAGE_DIR = "backend/data/images/"
-CSV_PATH = "backend/data/aaa_advml_final_project.csv"           # CSV с колонкой 'filename'
-CSV_COLUMN = "image_id"           # Название столбца с именами файлов
+CSV_PATH = "backend/data/aaa_advml_final_project.csv"
+CSV_COLUMN = "image_id"
 OUTPUT_INDEX = "backend/weights/appindex.faiss"
 OUTPUT_NAMES = "backend/weights/image_names.pkl"
 
@@ -26,7 +23,6 @@ model = models.resnet50(pretrained=True)
 model = torch.nn.Sequential(*list(model.children())[:-1])
 model.eval()
 
-# Преобразование
 preprocess = transforms.Compose([
     transforms.Resize(256),
     transforms.CenterCrop(224),
@@ -42,7 +38,6 @@ def get_embedding(image_path):
         emb = model(tensor).squeeze().numpy()
     return emb / np.linalg.norm(emb)
 
-# Считаем эмбеддинги только для нужных файлов
 valid_names = []
 embeddings = []
 
@@ -60,11 +55,9 @@ for fname in tqdm(image_files):
 
 embeddings = np.array(embeddings).astype("float32")
 
-# FAISS-индекс
 index = faiss.IndexFlatL2(embeddings.shape[1])
 index.add(embeddings)
 
-# Сохраняем
 faiss.write_index(index, OUTPUT_INDEX)
 with open(OUTPUT_NAMES, "wb") as f:
     pickle.dump(valid_names, f)
