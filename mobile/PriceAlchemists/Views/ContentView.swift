@@ -115,7 +115,20 @@ struct ContentView: View {
                 .padding(.horizontal)
                 .padding(.bottom)
             }
-            .navigationTitle("Оценка стоимости")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    HStack(spacing: 12) {
+                        Image("logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 40)
+                        Text("PriceAlchemists")
+                            .font(.title)
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
             .onChange(of: selectedItem) { oldItem, newItem in
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self) {
