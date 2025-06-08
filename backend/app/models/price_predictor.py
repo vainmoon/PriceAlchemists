@@ -50,7 +50,7 @@ class PricePredictor(nn.Module):
         price = self.mlp(fused)
 
         if return_intermediates:
-            return price, img_emb  # <-- Возвращает цену и embedding
+            return price, img_feat  # <-- Возвращает цену и embedding
         else:
             return price
 
