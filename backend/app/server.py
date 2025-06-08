@@ -48,11 +48,11 @@ async def predict(file:UploadFile, mask: UploadFile):
 
     prediction = full_inference_pipeline(input_image, device=device, models=models)
     print(prediction)
-    # prediction = full_inference_pipeline(input_image, device=device, models=models, return_intermediates) -> (price, embedding)
-    # print(prediction[0])
+    # prediction = full_inference_pipeline(input_image, device=device, models=models, return_intermediates=True)
+    # print({k: v for k, v in data.items() if k != "embedding"}) # вывести все кроме эмбеддинга
 
     # Получаем top-3 похожих товаров
-    similar_items = get_top3_similar_item_ids(input_image)
+    similar_items = get_top3_similar_item_ids(input_image) # на вход идет prediction['embedding']
     print(f"Top-3 похожих товаров: {similar_items}")
 
     # Заглушка для отправления изображений рекомендаций
