@@ -15,7 +15,8 @@ import base64
 from app.utils.images import open_image, open_mask, apply_mask, crop_image_by_mask
 from app.models.sam import segment_image_from_prompts
 from app.models.price_predictor import load_models, full_inference_pipeline
-from app.models.simple_faiss import get_top3_similar_item_ids
+#from app.models.simple_faiss import get_top3_similar_item_ids
+from backend.app.models.price_predictor_faiss import find_top3_similar
 
 app = FastAPI(
     title='ML Inference API',
@@ -50,7 +51,7 @@ async def predict(file:UploadFile, mask: UploadFile):
     print(prediction)
 
     # Получаем top-3 похожих товаров
-    similar_items = get_top3_similar_item_ids(input_image)
+    similar_items = find_top3_similar(input_image)
     print(f"Top-3 похожих товаров: {similar_items}")
 
     # Заглушка для отправления изображений рекомендаций
