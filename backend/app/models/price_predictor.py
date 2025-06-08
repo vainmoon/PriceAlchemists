@@ -49,9 +49,7 @@ class PricePredictor(nn.Module):
         fused = torch.cat([img_emb, text_emb, cat_emb, subcat_emb], dim=1)
         price = self.mlp(fused)
 
-        if return_intermediates:
-            return price, img_feat  # <-- Возвращает цену и embedding
-        return price, None
+        return price
 
 
 class CategorySubcategoryClassifier(nn.Module):
@@ -206,8 +204,7 @@ def full_inference_pipeline(image, device="cuda", models=None, return_intermedia
             input_ids,
             attention_mask,
             cat_tensor,
-            subcat_tensor,
-            return_intermediates
+            subcat_tensor
         )
 
     predicted_price = np.expm1(price_log.cpu().item()) # возвращаем цену в исходном масштабе
@@ -216,8 +213,7 @@ def full_inference_pipeline(image, device="cuda", models=None, return_intermedia
         "category": predicted_category,
         "subcategory": predicted_subcategory,
         "title": generated_title,
-        "price": predicted_price,
-        "embedding": embedding
+        "price": predicted_price
     }
 
 
