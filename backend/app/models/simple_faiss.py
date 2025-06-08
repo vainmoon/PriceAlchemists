@@ -1,71 +1,87 @@
 import torch
+import timm
+import io
+import faiss
 import numpy as np
 import pandas as pd
-import faiss
-import pickle
 from PIL import Image
-from torchvision import models, transforms
+from torchvision import transforms
+import torch.nn as nn
 import os
 
-# Пути
-IMAGE_DIR = "data/images/"
-CSV_PATH = "data/aaa_advml_final_project.csv"
-INDEX_PATH = "weights/appindex.faiss"
-NAMES_PATH = "weights/image_names.pkl"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-# Загрузка датафрейма
-df = pd.read_csv(CSV_PATH)
-df["image_id"] = df["image_id"].astype(str)
+device = "mps" if torch.backends.mps.is_available() \
+    else "cuda" if torch.cuda.is_available() else "cpu"
 
-# Загрузка FAISS индекса и имён
-index = faiss.read_index(INDEX_PATH)
-with open(NAMES_PATH, "rb") as f:
-    image_ids = pickle.load(f)  # список image_id в виде строк
+EMBEDDING_SHAPE = 512
 
-# Карта image_id → строка DataFrame
-id_to_row = {row["image_id"]: row for _, row in df.iterrows()}
-
-# Модель ResNet50
-model = models.resnet50(pretrained=True)
-model = torch.nn.Sequential(*list(model.children())[:-1])
-model.eval()
-
-# Преобразование изображения
-preprocess = transforms.Compose([
-    transforms.Resize(256),
+transform = transforms.Compose([
+    transforms.Resize(224),
     transforms.CenterCrop(224),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225]),
+    transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
 ])
 
-# Получение эмбеддинга
-def get_embedding_from_image_resnet(image: Image.Image) -> np.ndarray:
-    tensor = preprocess(image).unsqueeze(0)
+base_model = timm.create_model('swin_tiny_patch4_window7_224',
+                               pretrained=True,
+                               num_classes=0)
+base_model.to(device).eval()
+
+
+class SwinEmbeddingModel(nn.Module):
+    def __init__(self, base_model, out_dim):
+        super().__init__()
+        self.base = base_model  # это model.forward_features
+        self.head = nn.Linear(self.base.num_features, out_dim)
+
+    def forward(self, x):
+        features = self.base(x)
+        return self.head(features)
+
+
+model = SwinEmbeddingModel(base_model, EMBEDDING_SHAPE).to(device).eval()
+model.load_state_dict(torch.load("weights/swin_model_weights.pth",
+                                 weights_only=True))
+model = model.to(device).eval()
+
+df = pd.read_pickle("data/df_faiss.pkl")
+index = faiss.read_index("data/faiss_idx.index")
+
+
+def get_embedding_from_image_bytes(image_bytes: bytes) -> np.ndarray:
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image_tensor = transform(image).unsqueeze(0).to(device)
     with torch.no_grad():
-        emb = model(tensor).squeeze().numpy()
-    emb = emb / np.linalg.norm(emb)
-    return emb.astype("float32")
+        embedding = model(image_tensor).squeeze().cpu().numpy().flatten()
+    return embedding.astype("float32")
 
-# Получение top-3 похожих image_id
-def get_top3_similar_item_ids_faiss(image: Image.Image) -> list[str]:
-    emb = get_embedding_from_image_resnet(image)
-    distances, indices = index.search(np.array([emb]), k=3)
-    return [image_ids[i] for i in indices[0]]
 
-# Пример: предсказание цены по среднему ближайших
-def predict_price_from_image_faiss(image: Image.Image) -> float:
-    top_ids = get_top3_similar_item_ids_faiss(image)
-    prices = []
-    for image_id in top_ids:
-        row = id_to_row.get(image_id)
-        if row is not None and "price" in row:
-            prices.append(row["price"])
-    if prices:
-        return float(np.maximum(np.mean(prices), 100))
-    return 100.0
+def predict_price(image_bytes: bytes) -> float:
+    emb = get_embedding_from_image_bytes(image_bytes).reshape(1, -1)
+    _, indices = index.search(emb, k=4)
+    neighbor_prices = [df.iloc[idx]["price"]
+                       for idx in indices[0][1:] if idx < len(df)]
+    return float(np.mean(neighbor_prices)) if neighbor_prices else 0.0
 
-# Загрузка изображения по image_id
-def load_image_by_id(image_id: str) -> Image.Image:
-    path = os.path.join(IMAGE_DIR, image_id + ".jpg")
-    return Image.open(path).convert("RGB")
+
+def get_top3_similar_item_ids(image_bytes: bytes) -> list[int]:
+    emb = get_embedding_from_image_bytes(image_bytes).reshape(1, -1)
+    _, indices = index.search(emb, k=4)
+    image_ids = [df.iloc[idx]["image_id"] for idx in indices[0]]
+    item_ids = [df[df["image_id"] == iid]["item_id"].values[0]
+                for iid in image_ids[1:]]
+    return item_ids
+
+
+if __name__ == "__main__":
+    # Example of usage
+    img_path = "image.jpeg"
+    with open(img_path, "rb") as f:
+        image_bytes = f.read()
+
+    pred_price = predict_price(image_bytes)
+    top3_item_ids = get_top3_similar_item_ids(image_bytes)
+
+    print(f"Predicted price: {pred_price:.2f}₽")
+    print(f"Top-3 similar item_ids: {top3_item_ids}")
