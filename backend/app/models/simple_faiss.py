@@ -49,8 +49,7 @@ df = pd.read_pickle("data/df_faiss.pkl")
 index = faiss.read_index("data/faiss_idx.index")
 
 
-def get_embedding_from_image_bytes(image_bytes: bytes) -> np.ndarray:
-    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+def get_embedding_from_image_bytes(image) -> np.ndarray:
     image_tensor = transform(image).unsqueeze(0).to(device)
     with torch.no_grad():
         embedding = model(image_tensor).squeeze().cpu().numpy().flatten()
@@ -65,13 +64,13 @@ def predict_price(image_bytes: bytes) -> float:
     return float(np.mean(neighbor_prices)) if neighbor_prices else 0.0
 
 
-def get_top3_similar_item_ids(image_bytes: bytes) -> list[int]:
-    emb = get_embedding_from_image_bytes(image_bytes).reshape(1, -1)
+def get_top3_similar_item_ids(image) -> list[int]:
+    emb = get_embedding_from_image_bytes(image).reshape(1, -1)
     _, indices = index.search(emb, k=4)
     image_ids = [df.iloc[idx]["image_id"] for idx in indices[0]]
     item_ids = [df[df["image_id"] == iid]["item_id"].values[0]
                 for iid in image_ids[1:]]
-    return item_ids
+    return image_ids
 
 
 if __name__ == "__main__":
