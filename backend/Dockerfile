@@ -14,10 +14,6 @@ RUN pip install --no-cache-dir --upgrade -r /backend/requirements.txt
 # Copy application code
 COPY ./app /backend/app
 
-# Copy model weights and data
-COPY ./weights /backend/weights
-COPY ./data /backend/data
-
 # Expose port
 EXPOSE 8050
 
