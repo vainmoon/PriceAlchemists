@@ -1,15 +1,19 @@
 # PriceAlchemists
 
-Это учебный проект, выполненный в рамках финального задания курса Академии Аналитиков Авито по направлению
-Data Science.
+This is an academic project completed as the final assignment of the Avito Analysts Academy course in the Data Science track.
 
-## Задача
-**Умная камера**
+## Task
 
-Представьте, что вы увидели крутой спорткар на улице, и вам стало интересно - а сколько же он стоит? Или увидели и друзей классную вещь в интерьере, и постенялись спросить. Умная камера это то, что сможет помочь с этим. Эта приложение сможет по фото определять примерную цену товара, или даже всех объектов, которые попали на фото.
+**Smart Camera**
 
-## Команда
-- Кацуба Кирилл
-- Поправка Иван
-- Мозолин Игорь
-- Умнов Сергей (капитан)
+Imagine you see a cool sports car on the street and wonder — how much does it cost?  
+Or you notice a stylish item in a friend's interior but feel shy to ask about it.  
+The **Smart Camera** is an app that can help with that.  
+It can estimate the approximate price of a product — or even multiple objects — just from a photo.
+
+## Team
+
+- Kirill Katsuba  
+- Ivan Popravka  
+- Igor Mozolin  
+- Sergey Umnov (team lead)
