@@ -20,7 +20,6 @@ Choose an image from your gallery — the app will display it instantly.
   <img src="doc/img/upload_screen.png" alt="Upload image screen" width="200"/>
 </p>
 
----
 
 ### 2. Select an Object  
 Click on the object you want to evaluate or select it in a rectangle. The application will automatically highlight it using intelligent segmentation.
@@ -30,7 +29,6 @@ Click on the object you want to evaluate or select it in a rectangle. The applic
   <img src="doc/img/select_jacket_mask.png" alt="Object selection - mask of jacket" width="200"/>
 </p>
 
----
 
 ### 3. Get the Price and see similar listings
 After selecting an object, the app shows the estimated price for it and the top 3 similar products from **Avito**, helping users compare and take action.
