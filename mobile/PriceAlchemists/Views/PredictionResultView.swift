@@ -13,7 +13,7 @@ struct PredictionResultView: View {
     
     var body: some View {
         VStack(spacing: 30) {
-            Text("Предполагаемая цена")
+            Text("Estimated price")
                 .font(.title)
                 .foregroundColor(.primary)
             
@@ -30,7 +30,7 @@ struct PredictionResultView: View {
                 .frame(height: 20)
             
             VStack(spacing: 20) {
-                Text("Похожие товары на Авито")
+                Text("Related products on Avito")
                     .font(.system(size: 24, weight: .bold))
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -94,7 +94,7 @@ struct PredictionResultView: View {
                 shouldResetToRoot = true
                 navigationPath.removeLast(navigationPath.count)
             }) {
-                Text("Вернуться к началу")
+                Text("Go back to image selection")
                     .font(.headline)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)

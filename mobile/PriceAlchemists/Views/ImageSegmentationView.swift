@@ -154,7 +154,7 @@ struct ImageSegmentationView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .scaleEffect(2.0)
-                            Text("Расчет стоимости...")
+                            Text("Cost calculation...")
                                 .foregroundColor(.white)
                                 .padding(.top)
                         }
@@ -164,7 +164,7 @@ struct ImageSegmentationView: View {
                 // Error overlay
                 if let error = viewModel.error {
                     VStack {
-                        Text("Ошибка")
+                        Text("Error")
                             .font(.headline)
                             .foregroundColor(.white)
                         Text(error)

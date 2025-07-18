@@ -77,9 +77,9 @@ struct ContentView: View {
                         .padding()
                 } else {
                     ContentUnavailableView(
-                        "Изображение не выбрано",
+                        "The image is not selected",
                         systemImage: "photo",
-                        description: Text("Нажмите кнопку ниже, чтобы выбрать изображение")
+                        description: Text("Click the button below to select an image")
                     )
                     .frame(maxHeight: UIScreen.main.bounds.height * 0.6)
                 }
@@ -91,7 +91,7 @@ struct ContentView: View {
                         Button(action: {
                             navigationPath.append("segmentation")
                         }) {
-                            Text("Узнать стоимость")
+                            Text("Find out the cost")
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -103,7 +103,7 @@ struct ContentView: View {
                     
                     PhotosPicker(selection: $selectedItem,
                                matching: .images) {
-                        Text("Выбрать изображение")
+                        Text("Select an image")
                             .font(.headline)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
